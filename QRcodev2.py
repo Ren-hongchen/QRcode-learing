@@ -1,22 +1,6 @@
-import numpy as np
-import copy
+from constant import *
 import re
-
-AlphanumericModeMap = {
-    '0':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,
-    'A':10,'B':11,'C':12,'D':13,'E':14,'F':15,'G':16,'H':17,'I':18,
-    'J':19,'K':20,'L':21,'M':22,'N':23,'O':24,'P':25,'Q':26,'R':27,
-    'S':28,'T':29,'U':30,'V':31,'W':32,'X':33,'Y':34,'Z':35,' ':36,
-    '$':37,'%':38,'*':39,'+':40,'-':41,'.':42,'/':43,':':44
-}
-
-AlphaTable = [1, 2, 4, 8, 16, 32, 64, 128, 29, 58, 116, 232, 205, 135, 19, 38, 76, 152, 45, 90, 180, 117, 234, 201, 143, 3, 6, 12, 24, 48, 96, 192, 157, 39, 78, 156, 37, 74, 148, 53, 106, 212, 181, 119, 238, 193, 159, 35, 70, 140, 5, 10, 20, 40, 80, 160, 93, 186, 105, 210, 185, 111, 222, 161, 95, 190, 97, 194, 153, 47, 94, 188, 101, 202, 137, 15, 30, 60, 120, 240, 253, 231, 211, 187, 107, 214, 177, 127, 254, 225, 223, 163, 91, 182, 113, 226, 217, 175, 67, 134, 17, 34, 68, 136, 13, 26, 52, 104, 208, 189, 103, 206, 129, 31, 62, 124, 248, 237, 199, 147, 59, 118, 236, 197, 151, 
-51, 102, 204, 133, 23, 46, 92, 184, 109, 218, 169, 79, 158, 33, 66, 132, 21, 42, 84, 168, 77, 154, 41, 82, 164, 85, 170, 73, 146, 57, 114, 228, 213, 183, 115, 230, 209, 191, 99, 198, 145, 63, 126, 252, 229, 215, 179, 123, 246, 241, 255, 227, 219, 171, 75, 150, 49, 98, 196, 149, 55, 110, 220, 165, 87, 174, 65, 130, 25, 50, 100, 200, 141, 7, 14, 28, 56, 112, 224, 221, 167, 83, 166, 81, 162, 89, 178, 121, 242, 249, 239, 195, 
-155, 43, 86, 172, 69, 138, 9, 18, 36, 72, 144, 61, 122, 244, 245, 247, 243, 251, 235, 203, 139, 11, 22, 44, 88, 176, 125, 250, 233, 207, 131, 
-27, 54, 108, 216, 173, 71, 142, 1]
-
-
-
+import utils
 
 class QRcode:
     __str = ""
@@ -26,7 +10,7 @@ class QRcode:
     __version = 1 # QRcode size
     __data = "" # encoded data
 
-    def __init__(self,str,version=1,ECLevel='M') -> None:
+    def __init__(self,str,version=0,ECLevel='M') -> None:
         self.__str = str
         self.__strLength = len(str)
         self.__version = version
@@ -41,12 +25,25 @@ class QRcode:
     # Extended Channel Interpretation (ECI) mode is not supply
     # Structured Append mode is not supply
     # FNC1 mode is not supply
-    def __setEncodeMode(self) -> int:  
-        # to do 
+    def __setEncodeMode(self) -> None:  
+        if(self.__str.isdigit()):
+            self.__encodeMode = 0
+
+        AlphanumericModePattern = re.compile(b"^["+ re.escape(AlphanumericModeStr) + rb"]*\Z")
+        middleStr = self.__str   # avoid modifying self.__str 
+        if(AlphanumericModePattern.match(middleStr.encode("ISO 8859-1"))):
+            self.__encodeMode = 1
+        
+        self.__encodeMode = 2
+
+    # 1-40 versions
+    def __setVersion(self) -> int:
+        if(self.__encodeMode == 0):
+            utils.setNumricVersion
         return
 
-    def __setVersion(self) -> int:
-        #to do
+    def __checkVersion(self):
+        # to do 
         return
 
     def __setModeIndicator(self) -> None:
@@ -124,6 +121,12 @@ class QRcode:
         self.__str.encode(encoding='ISO 8859-1')
         for i in self.__str:
             data.append(bin(i)[2:].zfill(8))
+
+    def make(self):
+        self.__setEncodeMode()
+        if(self.__version == 0):
+            self.__setVersion()
+        self.__checkVersion()
 
     
     
