@@ -6,11 +6,11 @@ class QRcode:
     __str = ""
     __strLength = 0
     __encodeMode = 1
-    __ECLevel = 'M' # Error Correction Level
+    __ECLevel = 1 # Error Correction Level 0 L 1 M 2 Q 3 H
     __version = 1 # QRcode size
     __data = "" # encoded data
 
-    def __init__(self,str,version=0,ECLevel='M') -> None:
+    def __init__(self,str,version=0,ECLevel=1) -> None:
         self.__str = str
         self.__strLength = len(str)
         self.__version = version
@@ -38,12 +38,16 @@ class QRcode:
 
     # 1-40 versions
     def __setVersion(self) -> int:
-        if(self.__encodeMode == 0):
-            utils.setNumricVersion
+        self.__version == utils.bisect(self.__encodeMode,self.__ECLevel,self.__strLength)    
         return
 
     def __checkVersion(self):
-        # to do 
+        capacities = CapacityTable[(self.__version - 1) * 4 + self.__ECLevel]
+        maxcapacity = capacities[self.__encodeMode]
+        if(maxcapacity < self.__strLength):
+            raise Exception(
+                "The version you entered is small!"
+            )
         return
 
     def __setModeIndicator(self) -> None:
@@ -127,6 +131,8 @@ class QRcode:
         if(self.__version == 0):
             self.__setVersion()
         self.__checkVersion()
+        self.__setModeIndicator()
+        
 
     
     
