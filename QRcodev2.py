@@ -147,8 +147,13 @@ class QRcode:
         return
 
     def __setErrorCorrectCodes(self):
-        messagePolynomial = utils.getMessagePolynomial(self.__data)
-        generatorPolynomial = utils.getGeneratorPolynomial(self.__version,self.__ECLevel)
+        block = BlockTable[(self.__version - 1) * 4 + self.__ECLevel]
+        if(len(block) == 4 and block[2] == 1):
+            errorCorrectCodes = utils.getErrorCorrectCodes(self.__data, self.__version, self.__ECLevel)
+            self.__data = utils.interleave(self.__data, errorCorrectCodes)
+            
+        
+
         return
 
     def make(self):
