@@ -140,13 +140,63 @@ def interleave(data,version,level,eccodewords):  # need a better method :-(
         for _ in range(0,blocktable[4]):
             n.append(m[index:index + blocktable[5]])
             index += blocktable[5]
-        for i in range(0,max(blocktable[3],blocktable[5]) - 1):
+        for i in range(0,max(blocktable[3],blocktable[5])):
             for j in range(0,blocktable[2] + blocktable[4]):
-                if(i > len(n[j])):
+                if(i > len(n[j])-1):
                     continue
                 result += bin(n[j][i])[2:].zfill(8)
-        # add ec codewords
-        
-
+        # add error correct codewords
+        for i in range(0,blocktable[1]):
+            for j in range(0,blocktable[2] + blocktable[4]):
+                result += bin(ec[j][i])[2:].zfill(8)
     return result
+
+def getInitializedMap(version):
+    size = ((version - 1) * 4) + 21
+    map = np.full((size,size),2,dtype=int)
+    
+    # set finder pattern
+    finderpattern = np.array([[1,1,1,1,1,1,1],[1,0,0,0,0,0,1],[1,0,1,1,1,0,1],[1,0,1,1,1,0,1],
+                             [1,0,1,1,1,0,1],[1,0,0,0,0,0,1],[1,1,1,1,1,1,1]])
+    for i in ((0,0),(size-7,0),(0,size-7)):
+        map[i[0]:i[0]+7, i[1]:i[1]+7] = finderpattern
+    
+    # set seperator pattern
+    map[7,0:8] = map[0:8,7] = 0
+    map[7,size-8:size] = map[size-8:size,7] = 0
+    map[0:8,size-8] = map[size-8,0:8] = 0
+
+    # set alignment pattern
+    alignpattern = np.array([[1,1,1,1,1],[1,0,0,0,1],[1,0,1,0,1],[1,0,0,0,1],[1,1,1,1,1]])
+    if(version > 1):
+        for i in AlignmentTable[version - 2]:
+            for j in AlignmentTable[version -2]:
+                if((i-2) < 8 and (j-2) < 8):
+                    continue
+                elif((i-2) < 8 and (j+2) > (size - 8)):
+                    continue
+                elif((i+2) > (size-8) and (j-2) < 8 ):
+                    continue
+                else:
+                    map[i-2:i+3,j-2:j+3] = alignpattern
+    
+    # set timing patterns
+    flag = True
+    for i in range(8,size - 8):
+        if(flag == True):
+            map[6,i] = map[i,6] = 1
+        flag = not flag
+
+    # set dark module
+    map[(version * 4)+9,8] = 1
+
+    # set reserved area
+    
+
+    # place the data bits
+
+
+
+
+    return map
 

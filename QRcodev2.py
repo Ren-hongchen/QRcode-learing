@@ -1,4 +1,3 @@
-from signal import raise_signal
 from constant import *
 import re
 import utils
@@ -147,14 +146,14 @@ class QRcode:
         return
 
     def __setErrorCorrectCodes(self):
-        block = BlockTable[(self.__version - 1) * 4 + self.__ECLevel]
-        if(len(block) == 4 and block[2] == 1):
-            errorCorrectCodes = utils.getErrorCorrectCodes(self.__data, self.__version, self.__ECLevel)
-            self.__data = utils.interleave(self.__data, errorCorrectCodes)
-            
-        
-
+        eccodes = utils.getErrorCorrectCodes(self.__data,self.__version,self.__ECLevel)
+        self.__data = utils.interleave(self.__data,self.__version,self.__ECLevel,eccodes)
         return
+
+    def __paddingData(self):
+        map = utils.getInitializedMap(self.__version)
+        
+        return map
 
     def make(self):
         self.__setEncodeMode()
@@ -166,6 +165,7 @@ class QRcode:
         self.__encodeInputText()
         self.__addPadBytestoData()
         self.__setErrorCorrectCodes()
+        map = self.__paddingData()
 
         
 
