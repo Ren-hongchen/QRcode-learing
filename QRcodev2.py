@@ -152,8 +152,10 @@ class QRcode:
 
     def __paddingData(self):
         map = utils.getInitializedMap(self.__version)
-        
-        return map
+        return utils.paddingData(map,self.__data)
+
+    def __getMaskedMap(self,map):
+        return utils.getMaskedMap(map,self.__ECLevel)
 
     def make(self):
         self.__setEncodeMode()
@@ -166,7 +168,7 @@ class QRcode:
         self.__addPadBytestoData()
         self.__setErrorCorrectCodes()
         map = self.__paddingData()
-
+        maskedMap = self.__setMaskPattern(map)
         
 
     

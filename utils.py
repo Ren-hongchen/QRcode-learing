@@ -1,8 +1,9 @@
-from email import message
-from inspect import getgeneratorlocals
+from re import L
 from constant import *
 import math
 import numpy as np
+
+sequence = []
 
 # CapacityTable is not strictly orderly tuple, 
 # but we can noticed that tuple is orderly when we have fixed level and encodeMode,
@@ -149,7 +150,18 @@ def interleave(data,version,level,eccodewords):  # need a better method :-(
         for i in range(0,blocktable[1]):
             for j in range(0,blocktable[2] + blocktable[4]):
                 result += bin(ec[j][i])[2:].zfill(8)
-    return result
+    
+    # add remainder bits if necessary
+    if(2 <= version <= 6):
+        return result + '0000000'
+    elif(14 <= version <=20):
+        return result + '000'
+    elif(21 <= version <= 27):
+        return result + '0000'
+    elif(28 <= version <= 34):
+        return result + '000'
+    else:
+        return result
 
 def getInitializedMap(version):
     size = ((version - 1) * 4) + 21
@@ -185,18 +197,123 @@ def getInitializedMap(version):
     for i in range(8,size - 8):
         if(flag == True):
             map[6,i] = map[i,6] = 1
+        else:
+            map[6,i] = map[i,6] = 0
         flag = not flag
 
     # set dark module
     map[(version * 4)+9,8] = 1
 
     # set reserved area
-    
+    if(version < 7):
+        map[8,0:6] = map[0:6,8] = map[8,7:9] = map[7:9,8] = 0
+        map[8,size-8:size] = map[size-7:size,8] = 0
+    else:
+        map[0:6,size-10:size-7] = map[size-10:size-7,0:6] = 0
 
-    # place the data bits
-
-
-
+    getSequence(map) # get data position sequence
 
     return map
 
+def getSequence(map):
+    global sequence
+    for i in range(0,map.shape[0]):
+        for j in range(0,map.shape[1]):
+            if(map[i,j] != 2):
+                continue
+            else:
+                sequence.append((i,j))
+    return 
+
+def paddingData(map,data):
+    m = 0
+    j = map.shape[0] - 1
+    flag = True
+    while(j >= 0):
+        if(flag):
+            for i in range(map.shape[0]-1,-1,-1):
+                if(map[i,j] != 2 and map[i,j-1] != 2):
+                    continue
+                elif(map[i,j] != 2):
+                    map[i,j-1] = data[m]
+                    m += 1
+                elif(map[i,j-1] != 2):
+                    map[i,j] = data[m]
+                    m += 1
+                else:
+                    map[i,j] = data[m]
+                    map[i,j-1] = data[m+1]
+                    m += 2
+        else:
+            for i in range(0,map.shape[0]):
+                if(map[i,j] != 2 and map[i,j-1] != 2):
+                    continue
+                elif(map[i,j] != 2):
+                    map[i,j-1] = data[m]
+                    m += 1
+                elif(map[i,j-1] != 2):
+                    map[i,j] = data[m]
+                    m += 1
+                else:
+                    map[i,j] = data[m]
+                    map[i,j-1] = data[m+1]
+                    m += 2
+        if(j != 8):
+            j -= 2
+        else: j -= 3
+        flag = not flag
+    return map
+
+def getMaskedMap(map,level):
+    min_score = 0
+    result = []
+    for i in range(0,8):
+        formula = getMaskFormula(i)
+        masked_map = mask(map,formula)
+        final_map = paddingVersionFormat(masked_map,level,i)
+        score = evaluation(final_map)
+        if(score < min_score):
+            min_score = score
+            result = masked_map
+    return result
+
+
+def getMaskFormula(i):
+    if(i == 0):
+        return lambda x,y : (x + y) % 2 == 0
+    elif(i == 1):
+        return lambda x,y : x % 2 == 0
+    elif(i == 2):
+        return lambda x,y : y % 3 == 0
+    elif(i == 3):
+        return lambda x,y : (x + y) % 3 == 0
+    elif(i == 4):
+        return lambda x,y : (math.floor(x / 2) + math.floor(y / 3)) % 2 == 0
+    elif(i == 5):
+        return lambda x,y : ((x * y) % 2) + ((x * y) % 3) == 0
+    elif(i == 6):
+        return lambda x,y : (((x * y) % 2) + ((x * y) % 3)) % 2 == 0
+    else:
+        return lambda x,y : (((x + y) % 2) + ((x * y) % 3)) % 2 == 0 
+
+def mask(map,formula):
+    global sequence
+    for i,j in sequence:
+        if(formula(i,j)):
+            map[i,j] = map[i,j] ^ 1
+    return map
+
+def evaluation(masked_map):
+    score = 0
+    return score
+
+def paddingVersionFormat(map,level,pattern):
+    result = ""
+    if(level == 0): result = "01"
+    elif(level == 1): result = "00"
+    elif(level == 2): result = "11"
+    else: result = "10"
+
+    result += bin(pattern)[2:].zfill(3)
+
+    
