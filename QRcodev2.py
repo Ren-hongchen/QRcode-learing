@@ -1,6 +1,7 @@
 from constant import *
 import re
 import utils
+import numpy
 
 class QRcode:
     __str = ""
@@ -155,7 +156,7 @@ class QRcode:
         return utils.paddingData(map,self.__data)
 
     def __getMaskedMap(self,map):
-        return utils.getMaskedMap(map,self.__ECLevel)
+        return utils.getMaskedMap(map,self.__version,self.__ECLevel)
 
     def make(self):
         self.__setEncodeMode()
@@ -168,7 +169,7 @@ class QRcode:
         self.__addPadBytestoData()
         self.__setErrorCorrectCodes()
         map = self.__paddingData()
-        maskedMap = self.__setMaskPattern(map)
+        maskedMap = self.__getMaskedMap(map)
         
 
     

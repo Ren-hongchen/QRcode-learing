@@ -1,4 +1,3 @@
-from re import L
 from constant import *
 import math
 import numpy as np
@@ -130,7 +129,7 @@ def interleave(data,version,level,eccodewords):  # need a better method :-(
     index = 0
     result = ""
     if(ec.ndim == 1):
-        for i in range(0,len(ec),8):
+        for i in range(0,len(ec)):
             data += bin(eccodewords[i])[2:].zfill(8)
         return data
     else:
@@ -205,11 +204,10 @@ def getInitializedMap(version):
     map[(version * 4)+9,8] = 1
 
     # set reserved area
-    if(version < 7):
-        map[8,0:6] = map[0:6,8] = map[8,7:9] = map[7:9,8] = 0
-        map[8,size-8:size] = map[size-7:size,8] = 0
-    else:
-        map[0:6,size-10:size-7] = map[size-10:size-7,0:6] = 0
+    map[8,0:6] = map[0:6,8] = map[8,7:9] = map[7:9,8] = 0
+    map[8,size-8:size] = map[size-7:size,8] = 0
+    if(version >= 7):
+        map[0:6,size-10:size-7] = map[size-10:size-7,0:6] = 0    
 
     getSequence(map) # get data position sequence
 
@@ -229,7 +227,7 @@ def paddingData(map,data):
     m = 0
     j = map.shape[0] - 1
     flag = True
-    while(j >= 0):
+    while(j > 0):
         if(flag):
             for i in range(map.shape[0]-1,-1,-1):
                 if(map[i,j] != 2 and map[i,j-1] != 2):
@@ -264,13 +262,13 @@ def paddingData(map,data):
         flag = not flag
     return map
 
-def getMaskedMap(map,level):
+def getMaskedMap(map,version,level):
     min_score = 0
     result = []
     for i in range(0,8):
         formula = getMaskFormula(i)
         masked_map = mask(map,formula)
-        final_map = paddingVersionFormat(masked_map,level,i)
+        final_map = paddingVersionFormat(masked_map,version,level,i)
         score = evaluation(final_map)
         if(score < min_score):
             min_score = score
@@ -307,13 +305,75 @@ def evaluation(masked_map):
     score = 0
     return score
 
-def paddingVersionFormat(map,level,pattern):
-    result = ""
-    if(level == 0): result = "01"
-    elif(level == 1): result = "00"
-    elif(level == 2): result = "11"
-    else: result = "10"
+def paddingVersionFormat(map,version,level,pattern):
+    #Format Information
+    formatinfo = getFormatInfoEC(level,pattern)
+    #Version Information
+    if(version >= 7):
+        versioninfo = getVersionInfoEC(version)
+    #padding format infomation
+    index = 0
+    for i,j in FormatInfoTable:
+        map[i,j] = formatinfo[index]
+        index += 1
+    map[8,map.shape[0]-8:map.shape[0]] = formatinfo[7:15] 
+    formatinfo = formatinfo[::-1]
+    map[map.shape[0]-7:map.shape[0],8] = formatinfo[0:7]
+    #padding version information
+    if(version >= 7):
+        # bottom-left version block
+        index = 0
+        versioninfo = versioninfo[::-1]
+        for i in range(0,6):
+            for j in range(map.shape[0]-11,map.shape[0]-8):
+                map[i,j] = versioninfo[index]
+                map[j,i] = versioninfo[index]
 
-    result += bin(pattern)[2:].zfill(3)
+    return map
+
+
+def getFormatInfoEC(level,pattern):
+    format = ""
+    if(level == 0): format = "01"
+    elif(level == 1): format = "00"
+    elif(level == 2): format = "11"
+    else: format = "10"
+
+    format += bin(pattern)[2:].zfill(3)
+
+    format = np.array(list(format),dtype=int)
+    M = np.pad(format,(0,15-len(format)),'constant',constant_values =(0,0))
+
+    eccodes = ReedSolomon(M,(10,[1,0,1,0,0,1,1,0,1,1,1]))
+
+    format = np.concatenate((format,eccodes),axis=0)
+    mask = np.array([1,0,1,0,1,0,0,0,0,0,1,0,0,1,0])
+    format = format ^ mask
+
+    return format
+
+def getVersionInfoEC(version):
+    version = bin(version)[2:].zfill(6)
+    version = np.array(list(version),dtype=int)
+    M = np.pad(version,(0,18-len(version)),'constant',constant_values =(0,0))
+    eccodes = ReedSolomon(M,(12,[1,1,1,1,1,0,0,1,0,0,1,0,1]))
+    version = np.concatenate((version,eccodes),axis=0)
+    return version
+
+def ReedSolomon(M,info):
+    G = np.array(info[1])
+    M = np.trim_zeros(M,'f')
+    if(M.shape[0] <= info[0]):
+        M = np.pad(M,(info[0]-len(M),0),'constant',constant_values=(0,0))
+        return M
+
+    if(G.shape[0] < M.shape[0]):
+        G = np.pad(G,(0,M.shape[0]-G.shape[0]),'constant',constant_values = (0,0))
+
+    M = M ^ G
+
+    return ReedSolomon(M,info)
+
+
 
     
