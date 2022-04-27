@@ -39,7 +39,7 @@ class QRcode:
 
     # 1-40 versions
     def __setVersion(self) -> int:
-        self.__version == utils.bisect(self.__encodeMode,self.__ECLevel,self.__strLength)    
+        self.__version = utils.bisect(self.__encodeMode,self.__ECLevel,self.__strLength)    
         return
 
     def __checkVersion(self):
@@ -158,6 +158,10 @@ class QRcode:
     def __getMaskedMap(self,map):
         return utils.getMaskedMap(map,self.__version,self.__ECLevel)
 
+    def __draw(self,map):
+        utils.draw(map)
+        return
+
     def make(self):
         self.__setEncodeMode()
         if(self.__version == 0):
@@ -170,6 +174,7 @@ class QRcode:
         self.__setErrorCorrectCodes()
         map = self.__paddingData()
         maskedMap = self.__getMaskedMap(map)
+        self.__draw(maskedMap)
         
 
     

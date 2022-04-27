@@ -1,6 +1,8 @@
+import copy
 from constant import *
 import math
 import numpy as np
+import turtle
 
 sequence = []
 
@@ -264,13 +266,14 @@ def paddingData(map,data):
 
 def getMaskedMap(map,version,level):
     min_score = 0
-    result = []
+    result = np.array([])
     for i in range(0,8):
         formula = getMaskFormula(i)
-        masked_map = mask(map,formula)
+        copy_map = copy.deepcopy(map)
+        masked_map = mask(copy_map,formula)
         final_map = paddingVersionFormat(masked_map,version,level,i)
         score = evaluation(final_map)
-        if(score < min_score):
+        if((score < min_score) or i == 0):
             min_score = score
             result = masked_map
     return result
@@ -301,9 +304,12 @@ def mask(map,formula):
             map[i,j] = map[i,j] ^ 1
     return map
 
-def evaluation(masked_map):
-    score = 0
-    return score
+def evaluation(final_map):
+    score = getPenaltybyRule1(final_map)
+    score += getPenaltybyRule2(final_map)
+    score += getPenaltybyRule3(final_map)
+    score += getPenaltybyRule4(final_map)
+    return score 
 
 def paddingVersionFormat(map,version,level,pattern):
     #Format Information
@@ -373,6 +379,88 @@ def ReedSolomon(M,info):
     M = M ^ G
 
     return ReedSolomon(M,info)
+
+def getPenaltybyRule1(map):
+    score_x = score_y = 0
+    last_color_x = last_color_y = map[0,0]
+    count_x = count_y = 1
+    for i in range(0,map.shape[0]):
+        for j in range(1,map.shape[1]):
+            # evaluate row
+            if(map[i,j] == last_color_x):
+                count_x += 1
+            else:
+                last_color_x = map[i,j]
+                count_x = 1
+            if(count_x >= 5):
+                score_x += (3 + (count_x - 5))
+            # evaluate column
+            if(map[j,i] == last_color_y):
+                count_y += 1
+            else:
+                last_color_y = map[j,i]
+                count_y = 1
+            if(count_y >= 5):
+                score_y += (3 + (count_y - 5))
+    return score_x + score_y
+
+def getPenaltybyRule2(map):
+    score = 0
+    for i in range(0,map.shape[0] - 1):
+        for j in range(0,map.shape[1] - 1):
+            module = map[i,j]
+            if (map[i,j+1] == module) and (map[i+1,j] == module) and (map[i+1,j+1] == module):
+                score += 3
+    return score
+
+def getPenaltybyRule3(map):
+    score = 0
+    pattern1 = np.array([1,0,1,1,1,0,1,0,0,0,0])
+    pattern2 = np.array([0,0,0,0,1,0,1,1,1,0,1])
+    for i in range(0,map.shape[0] - 11):
+        for j in range(0,map.shape[1] - 11):
+            if (map[i:i+11,j] == pattern1).all() or (map[i:i+11,j] == pattern2).all():
+                score += 40
+            if (map[i,j:j+11] == pattern1).all() or (map[i,j:j+11] == pattern2).all():
+                score += 40
+    return score
+
+def getPenaltybyRule4(map):
+    total_count = map.shape[0] * map.shape[1]
+    dark_count = np.count_nonzero(map == 1)
+    ratio = dark_count / total_count
+    previous = math.floor(ratio / 5) * 5
+    next = (math.floor(ratio / 5) + 1) * 5
+    score = min(abs(previous - 50) / 5, abs(next - 50) / 5)
+    return score * 10
+
+def draw(map):
+    n = 30
+    x = -500
+    y = 300
+    turtle.tracer(0,0)
+    turtle.speed(11)
+    turtle.pensize(2)
+    turtle.penup()
+    for i in range(map.shape[0]):
+        for j in range(map.shape[1]):
+            turtle.goto(x + i * n,y - j *n)
+            if map[j,i] == 0:
+                continue
+                #drawblock(n,'white')
+            else: 
+                drawblock(n,'black')
+    turtle.done()
+
+def drawblock(length,fill_color):
+    turtle.pendown()
+    turtle.begin_fill()
+    turtle.fillcolor(fill_color)
+    for _ in range(4):
+        turtle.forward(length)
+        turtle.left(90)
+    turtle.end_fill()
+    turtle.penup()
 
 
 
