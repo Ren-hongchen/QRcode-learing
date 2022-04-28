@@ -1,7 +1,6 @@
 from constant import *
 import re
 import utils
-import numpy
 
 class QRcode:
     __str = ""
@@ -135,7 +134,7 @@ class QRcode:
         else:
             for i in range(0,n): self.__data += '0'
         # Add More 0s to Make the Length a Multiple of 8
-        for i in range(0,(8 - (len(self.__data) % 8))):
+        while(len(self.__data) % 8 != 0):
             self.__data += '0'
         # Add Pad Bytes if the String is Still too Short
         flag = True

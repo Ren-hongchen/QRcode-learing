@@ -133,7 +133,7 @@ def interleave(data,version,level,eccodewords):  # need a better method :-(
     if(ec.ndim == 1):
         for i in range(0,len(ec)):
             data += bin(eccodewords[i])[2:].zfill(8)
-        return data
+        return addRemainderBits(data,version)
     else:
         m = getMessagePolynomial(data)
         for _ in range(0,blocktable[2]):
@@ -151,7 +151,9 @@ def interleave(data,version,level,eccodewords):  # need a better method :-(
         for i in range(0,blocktable[1]):
             for j in range(0,blocktable[2] + blocktable[4]):
                 result += bin(ec[j][i])[2:].zfill(8)
+    return addRemainderBits(result,version)
     
+def addRemainderBits(result,version):
     # add remainder bits if necessary
     if(2 <= version <= 6):
         return result + '0000000'
@@ -227,9 +229,12 @@ def getSequence(map):
 
 def paddingData(map,data):
     m = 0
-    j = map.shape[0] - 1
+    j = map.shape[0] - 1 
     flag = True
     while(j > 0):
+        if(j == 6):
+            j -= 1
+            continue
         if(flag):
             for i in range(map.shape[0]-1,-1,-1):
                 if(map[i,j] != 2 and map[i,j-1] != 2):
@@ -257,10 +262,10 @@ def paddingData(map,data):
                 else:
                     map[i,j] = data[m]
                     map[i,j-1] = data[m+1]
+                    np.savetxt("test.txt",map,fmt="%d")
                     m += 2
-        if(j != 8):
-            j -= 2
-        else: j -= 3
+    
+        j -= 2
         flag = not flag
     return map
 
@@ -324,7 +329,7 @@ def paddingVersionFormat(map,version,level,pattern):
         index += 1
     map[8,map.shape[0]-8:map.shape[0]] = formatinfo[7:15] 
     formatinfo = formatinfo[::-1]
-    map[map.shape[0]-7:map.shape[0],8] = formatinfo[0:7]
+    map[map.shape[0]-7:map.shape[0],8] = formatinfo[8:15]
     #padding version information
     if(version >= 7):
         # bottom-left version block
