@@ -2,7 +2,7 @@ import copy
 from constant import *
 import math
 import numpy as np
-import turtle
+from PIL import Image
 
 sequence = []
 
@@ -444,33 +444,23 @@ def getPenaltybyRule4(map):
     return score * 10
 
 def draw(map):
-    n = 10
-    x = -150
-    y = 200
-    turtle.tracer(0,0)
-    turtle.speed(11)
-    turtle.pensize(2)
-    turtle.penup()
-    for i in range(map.shape[0]):
-        for j in range(map.shape[1]):
-            turtle.goto(x + i * n,y - j *n)
-            if map[j,i] == 0:
-                continue
-                #drawblock(n,'white')
-            else: 
-                drawblock(n,'black')
-    turtle.done()
+    block_len = 5
+    x = y = block_len * 4
+    image = Image.new('1',[(len(map)+8)*block_len]*2,'white')
+    for i in range(0,map.shape[0]):
+        for j in range(0,map.shape[1]):
+            if(map[i,j] == 1):
+                draw_bit(image,x,y,block_len)
+            x += block_len
+        x,y = block_len*4,y+block_len
+    image.save("out.png") 
+    return
 
-def drawblock(length,fill_color):
-    turtle.pendown()
-    turtle.begin_fill()
-    turtle.fillcolor(fill_color)
-    for _ in range(4):
-        turtle.forward(length)
-        turtle.left(90)
-    turtle.end_fill()
-    turtle.penup()
-
+def draw_bit(image,x,y,le):
+    for i in range(le):
+        for j in range(le):
+            image.putpixel((x+i,y+j),0)
+    return
 
 
     
