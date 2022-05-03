@@ -54,7 +54,7 @@ def getAlpha(a):
         result = result ^ 285
     return result
 
-def getAlphaIndex(a):
+def getAlphaIndex(a): 
     if(math.log(a,2) % 1 == 0):
         return int(math.log(a,2))
     elif(a % 2 == 0):
@@ -77,13 +77,17 @@ def getPolynomialDivision(MP,GP,deepth):
         return MP
     M = np.array(MP)
     G = np.array(GP)
-
+    if(M[0] == 0):
+        M = np.delete(M,0)
+        return getPolynomialDivision(M,G,deepth-1)
     first = getAlphaIndex(M[0])
+    #first = AlphaTable.index(M[0])
     a = G + first
 
     a[a > 255 ] = a[a > 255] % 255
 
     for i in range(0,len(a)):
+        #a[i] = AlphaTable[a[i]]
         a[i] = getAlpha(a[i])
 
     if(len(a) < len(M)):
@@ -211,7 +215,7 @@ def getInitializedMap(version):
     map[8,0:6] = map[0:6,8] = map[8,7:9] = map[7:9,8] = 0
     map[8,size-8:size] = map[size-7:size,8] = 0
     if(version >= 7):
-        map[0:6,size-10:size-7] = map[size-10:size-7,0:6] = 0    
+        map[0:6,size-11:size-7] = map[size-11:size-7,0:6] = 0    
 
     getSequence(map) # get data position sequence
 
@@ -262,7 +266,6 @@ def paddingData(map,data):
                 else:
                     map[i,j] = data[m]
                     map[i,j-1] = data[m+1]
-                    np.savetxt("test.txt",map,fmt="%d")
                     m += 2
     
         j -= 2
@@ -339,6 +342,7 @@ def paddingVersionFormat(map,version,level,pattern):
             for j in range(map.shape[0]-11,map.shape[0]-8):
                 map[i,j] = versioninfo[index]
                 map[j,i] = versioninfo[index]
+                index += 1
 
     return map
 
@@ -440,9 +444,9 @@ def getPenaltybyRule4(map):
     return score * 10
 
 def draw(map):
-    n = 30
-    x = -500
-    y = 300
+    n = 10
+    x = -150
+    y = 200
     turtle.tracer(0,0)
     turtle.speed(11)
     turtle.pensize(2)

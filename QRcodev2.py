@@ -142,7 +142,7 @@ class QRcode:
             if(flag): self.__data += '11101100'
             else: self.__data += '00010001'
             flag = not flag
-
+            
         return
 
     def __setErrorCorrectCodes(self):
