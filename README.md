@@ -4,7 +4,15 @@
 
 本来我自己用来学习二维码原理的代码，但在学习过程中我发现中文互联网对二维码原理方面的资料并不是很多，其中大部分只是介绍二维码的规格和基本常识，没有深入介绍其底层原理，所以我希望能写一些东西来帮助有需要的人
 
+## 安装
+
+~~~python
+pip install -r requirements.txt
+~~~
+
 ## 示例
+
+**QRcode.py 只能生成version1-M的二维码，现以作废**
 
 ```python
 from QRcodev2 import QRcode
@@ -14,7 +22,11 @@ a.make()
 
 默认version = 0 (自动选择适合的version) level = 1(M)
 
+运行后，会在当前目录生成out.png文件。
+
 ## 教程
+
+教程文档在guides文件夹下，以下为目录部分：
 
 1. 分析你要编码的数据，选择编码模式
 2. 编码数据
@@ -30,8 +42,9 @@ a.make()
 
 ---
 
-参考资料：
+## 参考资料
 
  	1. https://www.thonky.com/qr-code-tutorial/
  	2. https://coolshell.cn/articles/10590.html
+ 	3. https://en.wikipedia.org/wiki/QR_code
 
