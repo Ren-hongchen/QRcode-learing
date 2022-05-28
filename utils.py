@@ -41,27 +41,31 @@ def mul(a,b):
             if(result[i+j] == None):
                 result[i+j] = item1 + item2
             else:
-                AlphaNumber = getAlpha(result[i+j]) ^ getAlpha(item1 + item2)
-                result[i+j] = getAlphaIndex(AlphaNumber)
+                #AlphaNumber = getAlpha(result[i+j]) ^ getAlpha(item1 + item2)
+                if(result[i+j] > 255):
+                    result[i+j] = result[i+j] % 255
+                AlphaNumber = AlphaTable[result[i+j]] ^ AlphaTable[item1 + item2]
+                #result[i+j] = getAlphaIndex(AlphaNumber)
+                result[i+j] = AlphaTable.index(AlphaNumber)
     return result
 
 
-def getAlpha(a):
-    if(a == 0):
-        return 1
-    result = getAlpha(a-1) * 2
-    while(result > 255):
-        result = result ^ 285
-    return result
+# def getAlpha(a):
+#     if(a == 0):
+#         return 1
+#     result = getAlpha(a-1) * 2
+#     while(result > 255):
+#         result = result ^ 285
+#     return result
 
-def getAlphaIndex(a): 
-    if(math.log(a,2) % 1 == 0):
-        return int(math.log(a,2))
-    elif(a % 2 == 0):
-        return getAlphaIndex(a // 2) + 1
-    else:
-        a = a ^ 285
-        return getAlphaIndex(a)
+# def getAlphaIndex(a): 
+#     if(math.log(a,2) % 1 == 0):
+#         return int(math.log(a,2))
+#     elif(a % 2 == 0):
+#         return getAlphaIndex(a // 2) + 1
+#     else:
+#         a = a ^ 285
+#         return getAlphaIndex(a)
 
 
 def getMessagePolynomial(data):
@@ -80,15 +84,15 @@ def getPolynomialDivision(MP,GP,deepth):
     if(M[0] == 0):
         M = np.delete(M,0)
         return getPolynomialDivision(M,G,deepth-1)
-    first = getAlphaIndex(M[0])
-    #first = AlphaTable.index(M[0])
+    #first = getAlphaIndex(M[0])
+    first = AlphaTable.index(M[0])
     a = G + first
 
     a[a > 255 ] = a[a > 255] % 255
 
     for i in range(0,len(a)):
-        #a[i] = AlphaTable[a[i]]
-        a[i] = getAlpha(a[i])
+        a[i] = AlphaTable[a[i]]
+        #a[i] = getAlpha(a[i])
 
     if(len(a) < len(M)):
         a = np.pad(a,(0,len(M)-len(a)), 'constant', constant_values = (0,0))
