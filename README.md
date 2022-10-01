@@ -12,15 +12,13 @@ pip install -r requirements.txt
 
 ## 示例
 
-**QRcode.py 只能生成version1-M的二维码，现以作废**
-
 ```python
-from QRcodev2 import QRcode
-a = QRcode("HELLO WORLD",0,2) # QRcode(str,version,level) 
-a.make()
+from QRcode import QRcode
+qr = QRcode("HELLO WORLD", 0, 2) # QRcode(input_data, version, ec_level) 
+qr.make()
 ```
 
-默认version = 0 (自动选择适合的version) level = 1(M)
+默认version = 0 (自动选择适合的version)  ec_level = 1(M)
 
 运行后，会在当前目录生成out.png文件。
 

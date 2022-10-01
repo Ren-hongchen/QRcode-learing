@@ -17,7 +17,7 @@ class QRcode:
 
     def __init__(self, input_data, version=0, ec_level=1):
         self.input_data = input_data
-        self.input_data_length = len(str)
+        self.input_data_length = len(input_data)
         self.version = version # QRcode size
         self.ec_level = ec_level # Error Correction Level 0-L 1-M 2-Q 3-H
         self.encode_mode = self.ALPHANUMERIC_MODE
