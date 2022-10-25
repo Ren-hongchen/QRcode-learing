@@ -37,7 +37,7 @@ class QRcode:
 
     # 1-40 versions
     def __set_version(self):
-        self.version = utils.get_suitable_version(self.encode_mode,self.ec_level, self.input_data_length)    
+        self.version = utils.get_suitable_version(self.encode_mode, self.ec_level, self.input_data_length)    
         return
 
     def __check_version(self):

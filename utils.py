@@ -22,7 +22,7 @@ def get_suitable_version(encode_mode, ec_level, target):
             high = mid
     return low + 1
 
-def get_max_capacity(version, ec_level) -> int:
+def get_max_capacity(version, ec_level):
     return BLOCK_TABLE[(version - 1) * 4 + ec_level][0] * 8
 
 def get_generator_polynomial(version, ec_level):
@@ -69,11 +69,11 @@ def mul(a, b):
 
 
 def get_message_polynomial(data):
-    messagePolynomial = []
+    message_polynomial = []
     for i in range(0, len(data), 8):
         a = int(data[i:i+8], 2)
-        messagePolynomial.append(a)
-    return messagePolynomial
+        message_polynomial.append(a)
+    return message_polynomial
 
 
 def get_polynomial_division(message_polynomial, generator_polynomial, deepth):
@@ -90,7 +90,7 @@ def get_polynomial_division(message_polynomial, generator_polynomial, deepth):
 
     a[a > 255 ] = a[a > 255] % 255
 
-    for i in range(0,len(a)):
+    for i in range(0, len(a)):
         a[i] = ALPHA_TABLE[a[i]]
         #a[i] = getAlpha(a[i])
 
@@ -104,7 +104,7 @@ def get_polynomial_division(message_polynomial, generator_polynomial, deepth):
     if(a[0] == 0):
         a = np.delete(a,0)
     
-    return get_polynomial_division(a,G,deepth - 1)
+    return get_polynomial_division(a, G, deepth - 1)
 
 
 def get_error_correct_codes(data, version, ec_level):
@@ -179,8 +179,7 @@ def get_initialized_map(version):
     map = np.full((size, size), 2, dtype=int)
     
     # set finder mask_pattern
-    finder_pattern = np.array([[1,1,1,1,1,1,1],[1,0,0,0,0,0,1],[1,0,1,1,1,0,1],[1,0,1,1,1,0,1],
-                             [1,0,1,1,1,0,1],[1,0,0,0,0,0,1],[1,1,1,1,1,1,1]])
+    finder_pattern = np.array(FINDER_MASK_PATTERN)
     for i in ((0, 0), (size-7, 0), (0, size-7)):
         map[i[0]:i[0]+7, i[1]:i[1]+7] = finder_pattern
     
@@ -190,7 +189,7 @@ def get_initialized_map(version):
     map[0:8, size-8] = map[size-8, 0:8] = 0
 
     # set alignment mask_pattern
-    align_pattern = np.array([[1,1,1,1,1], [1,0,0,0,1], [1,0,1,0,1], [1,0,0,0,1], [1,1,1,1,1]])
+    align_pattern = np.array(ALIGNMENT_MASK_PATTERN)
     if(version > 1):
         for i in ALIGNMENT_TABLE[version - 2]:
             for j in ALIGNMENT_TABLE[version -2]:
