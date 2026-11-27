@@ -1,10 +1,12 @@
 import copy
-from constant import *
 import math
 import numpy as np
 from PIL import Image
 
+from constant import *
+
 sequence = []
+
 
 # CapacityTable is not strictly orderly tuple, 
 # but we can noticed that tuple is orderly when we have fixed ec_level and encodeMode,
@@ -16,33 +18,37 @@ def get_suitable_version(encode_mode, ec_level, target):
     while low < high:
         mid = (low + high) // 2
         data = CAPACITY_TABLE[mid * 4 + ec_level][encode_mode]
-        if(data < target):
+        if data < target:
             low = mid + 1
         else:
             high = mid
     return low + 1
 
+
 def get_max_capacity(version, ec_level):
     return BLOCK_TABLE[(version - 1) * 4 + ec_level][0] * 8
 
+
 def get_generator_polynomial(version, ec_level):
     ec_code_words = BLOCK_TABLE[(version - 1) * 4 + ec_level][1]
-    return caculate_generator_polynomial(ec_code_words)
+    return calculate_generator_polynomial(ec_code_words)
 
-def caculate_generator_polynomial(ec_code_words):
-    if(ec_code_words == 1):
-        return [0,0]
-    return mul(caculate_generator_polynomial(ec_code_words - 1), [0, ec_code_words - 1])
+
+def calculate_generator_polynomial(ec_code_words):
+    if ec_code_words == 1:
+        return [0, 0]
+    return mul(calculate_generator_polynomial(ec_code_words - 1), [0, ec_code_words - 1])
+
 
 def mul(a, b):
     result = [None] * (b[1] + 2)
-    for i,item1 in enumerate(a):
+    for i, item1 in enumerate(a):
         for j, item2 in enumerate(b):
-            if(result[i+j] == None):
+            if result[i+j] is None:
                 result[i+j] = item1 + item2
             else:
                 #AlphaNumber = getAlpha(result[i+j]) ^ getAlpha(item1 + item2)
-                if(result[i+j] > 255):
+                if result[i+j] > 255:
                     result[i+j] = result[i+j] % 255
                 alpha_number = ALPHA_TABLE[result[i+j]] ^ ALPHA_TABLE[item1 + item2]
                 #result[i+j] = getAlphaIndex(AlphaNumber)
@@ -77,11 +83,11 @@ def get_message_polynomial(data):
 
 
 def get_polynomial_division(message_polynomial, generator_polynomial, deepth):
-    if(deepth == 0):
+    if deepth == 0:
         return message_polynomial
     M = np.array(message_polynomial)
     G = np.array(generator_polynomial)
-    if(M[0] == 0):
+    if M[0] == 0:
         M = np.delete(M,0)
         return get_polynomial_division(M, G, deepth-1)
     #first = getAlphaIndex(M[0])
@@ -94,14 +100,14 @@ def get_polynomial_division(message_polynomial, generator_polynomial, deepth):
         a[i] = ALPHA_TABLE[a[i]]
         #a[i] = getAlpha(a[i])
 
-    if(len(a) < len(M)):
+    if len(a) < len(M):
         a = np.pad(a, (0, len(M)-len(a)), 'constant', constant_values = (0,0))
     else:
         M = np.pad(M, (0, len(a)-len(M)), 'constant', constant_values = (0,0))    
     
     a = a ^ M
 
-    if(a[0] == 0):
+    if a[0] == 0:
         a = np.delete(a,0)
     
     return get_polynomial_division(a, G, deepth - 1)
@@ -115,13 +121,13 @@ def get_error_correct_codes(data, version, ec_level):
     index = 0
     result = []
 
-    if(block_length == 4 and block[2] == 1):
+    if block_length == 4 and block[2] == 1:
         return get_polynomial_division(message_polynomial, generator_polynomial, len(message_polynomial))
     for _ in range(0,block[2]):
         message = message_polynomial[index : index+block[3]]
         index += block[3]
         result.append(get_polynomial_division(message, generator_polynomial, len(message)))
-    if(block_length == 6):
+    if block_length == 6:
         for _ in range(0,block[4]):
             message = message_polynomial[index : index+block[5]]
             index += block[5]
@@ -130,15 +136,13 @@ def get_error_correct_codes(data, version, ec_level):
     return result
 
 
-
 def interleave(data, version, ec_level, ec_code_words):  # need a better method :-(
     ec_codes_array = np.array(ec_code_words)
     block_table = BLOCK_TABLE[(version - 1) * 4 + ec_level]
-    m = []
     n = []
     index = 0
     result = ""
-    if(ec_codes_array.ndim == 1):
+    if ec_codes_array.ndim == 1:
         for i in range(0, len(ec_codes_array)):
             data += bin(ec_code_words[i])[2:].zfill(8)
         return add_remainder_bits(data, version)
@@ -163,13 +167,13 @@ def interleave(data, version, ec_level, ec_code_words):  # need a better method 
     
 def add_remainder_bits(result, version):
     # add remainder bits if necessary
-    if(2 <= version <= 6):
+    if 2 <= version <= 6:
         return result + '0000000'
-    elif(14 <= version <=20):
+    elif 14 <= version <=20:
         return result + '000'
-    elif(21 <= version <= 27):
+    elif 21 <= version <= 27:
         return result + '0000'
-    elif(28 <= version <= 34):
+    elif 28 <= version <= 34:
         return result + '000'
     else:
         return result
@@ -190,14 +194,14 @@ def get_initialized_map(version):
 
     # set alignment mask_pattern
     align_pattern = np.array(ALIGNMENT_MASK_PATTERN)
-    if(version > 1):
+    if version > 1:
         for i in ALIGNMENT_TABLE[version - 2]:
             for j in ALIGNMENT_TABLE[version -2]:
-                if((i-2) < 8 and (j-2) < 8):
+                if (i-2) < 8 and (j-2) < 8:
                     continue
-                elif((i-2) < 8 and (j+2) > (size - 8)):
+                elif(i-2) < 8 and (j+2) > (size - 8):
                     continue
-                elif((i+2) > (size-8) and (j-2) < 8 ):
+                elif ((i+2) > (size-8)) and ((j-2) < 8):
                     continue
                 else:
                     map[i-2:i+3, j-2:j+3] = align_pattern
@@ -214,7 +218,7 @@ def get_initialized_map(version):
     # set reserved area
     map[8, 0:6] = map[0:6, 8] = map[8, 7:9] = map[7:9, 8] = 0
     map[8, size-8:size] = map[size-7:size, 8] = 0
-    if(version >= 7):
+    if version >= 7:
         map[0:6, size-11:size-7] = map[size-11:size-7, 0:6] = 0    
 
     get_sequence(map) # get data position sequence
@@ -225,7 +229,7 @@ def get_sequence(map):
     global sequence
     for i in range(0, map.shape[0]):
         for j in range(0, map.shape[1]):
-            if(map[i, j] != 2):
+            if map[i, j] != 2:
                 continue
             else:
                 sequence.append((i, j))
@@ -235,18 +239,18 @@ def padding_data(map, data):
     m = 0
     j = map.shape[0] - 1 
     flag = True
-    while(j > 0):
-        if(j == 6):
+    while j > 0:
+        if j == 6:
             j -= 1
             continue
-        if(flag):
+        if flag:
             for i in range(map.shape[0]-1, -1, -1):
-                if(map[i, j] != 2 and map[i, j-1] != 2):
+                if map[i, j] != 2 and map[i, j-1] != 2:
                     continue
-                elif(map[i, j] != 2):
+                elif map[i, j] != 2:
                     map[i, j-1] = data[m]
                     m += 1
-                elif(map[i, j-1] != 2):
+                elif map[i, j-1] != 2:
                     map[i, j] = data[m]
                     m += 1
                 else:
@@ -255,12 +259,12 @@ def padding_data(map, data):
                     m += 2
         else:
             for i in range(0, map.shape[0]):
-                if(map[i, j] != 2 and map[i, j-1] != 2):
+                if map[i, j] != 2 and map[i, j-1] != 2:
                     continue
-                elif(map[i, j] != 2):
+                elif map[i, j] != 2:
                     map[i, j-1] = data[m]
                     m += 1
-                elif(map[i, j-1] != 2):
+                elif map[i, j-1] != 2:
                     map[i, j] = data[m]
                     m += 1
                 else:
@@ -281,26 +285,26 @@ def get_masked_map(map, version, ec_level):
         masked_map = mask(copy_map, formula)
         final_map = padding_version_format(masked_map, version, ec_level, i)
         score = evaluation(final_map)
-        if((score < min_score) or i == 0):
+        if (score < min_score) or i == 0:
             min_score = score
             result = masked_map
     return result
 
 
 def get_mask_formula(i):
-    if(i == 0):
+    if i == 0:
         return lambda x,y : (x + y) % 2 == 0
-    elif(i == 1):
+    elif i == 1:
         return lambda x,y : x % 2 == 0
-    elif(i == 2):
+    elif i == 2:
         return lambda x,y : y % 3 == 0
-    elif(i == 3):
+    elif i == 3:
         return lambda x,y : (x + y) % 3 == 0
-    elif(i == 4):
+    elif i == 4:
         return lambda x,y : (math.floor(x / 2) + math.floor(y / 3)) % 2 == 0
-    elif(i == 5):
+    elif i == 5:
         return lambda x,y : ((x * y) % 2) + ((x * y) % 3) == 0
-    elif(i == 6):
+    elif i == 6:
         return lambda x,y : (((x * y) % 2) + ((x * y) % 3)) % 2 == 0
     else:
         return lambda x,y : (((x + y) % 2) + ((x * y) % 3)) % 2 == 0 
@@ -308,7 +312,7 @@ def get_mask_formula(i):
 def mask(map, formula):
     global sequence
     for i, j in sequence:
-        if(formula(i, j)):
+        if formula(i, j):
             map[i, j] = map[i, j] ^ 1
     return map
 
@@ -323,7 +327,7 @@ def padding_version_format(map, version, ec_level, mask_pattern):
     #Format Information
     format_info = get_format_info(ec_level, mask_pattern)
     #Version Information
-    if(version >= 7):
+    if version >= 7:
         version_info = get_version_info(version)
     #padding format infomation
     index = 0
@@ -334,7 +338,7 @@ def padding_version_format(map, version, ec_level, mask_pattern):
     format_info = format_info[::-1]
     map[map.shape[0]-7:map.shape[0], 8] = format_info[8:15]
     #padding version information
-    if(version >= 7):
+    if version >= 7:
         # bottom-left version block
         index = 0
         version_info = version_info[::-1]
@@ -349,15 +353,15 @@ def padding_version_format(map, version, ec_level, mask_pattern):
 
 def get_format_info(ec_level, mask_pattern):
     format = ""
-    if(ec_level == 0): format = "01"
-    elif(ec_level == 1): format = "00"
-    elif(ec_level == 2): format = "11"
+    if ec_level == 0: format = "01"
+    elif ec_level == 1: format = "00"
+    elif ec_level == 2: format = "11"
     else: format = "10"
 
     format += bin(mask_pattern)[2:].zfill(3)
 
     format = np.array(list(format), dtype=int)
-    M = np.pad(format, (0,15-len(format)), 'constant', constant_values =(0,0))
+    M = np.pad(format, (0,15 - len(format)), 'constant', constant_values =(0,0))
 
     ec_codes = ReedSolomon(M, (10, [1,0,1,0,0,1,1,0,1,1,1]))
 
@@ -371,7 +375,7 @@ def get_version_info(version):
     version = bin(version)[2:].zfill(6)
     version = np.array(list(version), dtype=int)
     M = np.pad(version, (0, 18-len(version)), 'constant', constant_values =(0, 0))
-    ec_codes = ReedSolomon(M,(12, [1,1,1,1,1,0,0,1,0,0,1,0,1]))
+    ec_codes = ReedSolomon(M, (12, [1,1,1,1,1,0,0,1,0,0,1,0,1]))
     version = np.concatenate((version, ec_codes), axis=0)
     return version
 
